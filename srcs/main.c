@@ -41,7 +41,7 @@ int main(int ac, char **av) {
     struct sockaddr_in socketAddress;
     socketAddress.sin_family = AF_INET;
     inet_pton(AF_INET, inputAddress, &(socketAddress.sin_addr));
-    getnameinfo((struct sockaddr *)&socketAddress, sizeof(socketAddress), host, 1024, NULL, NULL, 0);
+    getnameinfo((struct sockaddr *)&socketAddress, sizeof(socketAddress), host, 1024, NULL, 0, 0);
     printf("host=%s \n", host);
 
     struct sockaddr_in* internet_addr = (struct sockaddr_in*) addr->ai_addr;
