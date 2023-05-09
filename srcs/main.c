@@ -1,50 +1,44 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <netinet/in.h>
+#include "ft_ping.h"
 
-// convert an IP address to a string
-char *ft_iptoa(struct sockaddr *sa)
-{
-    static char str[INET_ADDRSTRLEN];
-    struct sockaddr_in *s = (struct sockaddr_in *)sa;
+void dns_lookup(char *hostname) {
+	struct addrinfo hints, *res;
+	struct sockaddr_in *addr;
+	char addrstr[INET_ADDRSTRLEN];
 
-    inet_ntop(AF_INET, &s->sin_addr, str, sizeof(str));
-    return str;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET; // IPv4
+	hints.ai_socktype = SOCK_STREAM;
+
+	if (getaddrinfo(hostname, NULL, &hints, &res) != 0) {
+		fprintf(stderr, "ping: %s: Name or service not known\n", hostname);
+		exit(1);
+	}
+
+	addr = (struct sockaddr_in *)res->ai_addr;
+	inet_ntop(AF_INET, &(addr->sin_addr), addrstr, INET_ADDRSTRLEN);
+
+	printf("PING %s (%s): 56 data bytes\n", hostname, addrstr);
+	printf("IPv4 Address: %s\n", addrstr);
+
+	freeaddrinfo(res);
 }
 
-int main(int ac, char **av) {
-    if (ac != 2) {
-        printf("Usage: %s <hostname>\n", av[0]);
-        return 1;
-    }
-    struct addrinfo* addr;
-    int result = getaddrinfo(av[1], NULL, NULL, &addr);
-    if (result != 0) {
-        printf("Error from getaddrinfo: %s\n", gai_strerror(result));
-        return 1;
-    }
+int main(int ac, char **av)
+{
+	opt_t opt;
+	if (getuid() != 0)
+	{
+		printf("Error: You must be root to run this program\n");
+		return 1;
+	}
+	if (ac < 2)
+	{
+		printf("Usage: %s <hostname>\n", av[0]);
+		return 1;
+	}
+	opt = parse_opt(ac, av);
+	handle_opt(opt);
+	dns_lookup(opt.hostname);
 
-    result = getnameinfo(addr->ai_addr, addr->ai_addrlen, NULL, 0, NULL, 0, NI_NUMERICHOST);
-    if (result != 0) {
-        printf("Error from getnameinfo: %s\n", gai_strerror(result));
-        return 1;
-    }
-    
-    char host[1024];
-    char *inputAddress = ft_iptoa(addr->ai_addr);
-    struct sockaddr_in socketAddress;
-    socketAddress.sin_family = AF_INET;
-    inet_pton(AF_INET, inputAddress, &(socketAddress.sin_addr));
-    getnameinfo((struct sockaddr *)&socketAddress, sizeof(socketAddress), host, 1024, NULL, 0, 0);
-    printf("host=%s \n", host);
-
-    struct sockaddr_in* internet_addr = (struct sockaddr_in*) addr->ai_addr;
-    printf("%s is at: %s\n", av[1], inet_ntoa(internet_addr->sin_addr));
-    return 0;
+	return 0;
 }
