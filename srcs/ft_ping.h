@@ -4,6 +4,7 @@
 # include <stdio.h>
 # include <unistd.h>
 # include <stdlib.h>
+# include <stdbool.h>
 
 # include <sys/types.h>
 # include <sys/socket.h>
@@ -11,7 +12,6 @@
 # include <arpa/inet.h>
 # include <string.h>
 # include <netinet/in.h>
-
 # include <netinet/ip_icmp.h>
 
 # define PKT_SIZE 64
@@ -30,6 +30,8 @@ typedef struct	s_pkt
 	struct iphdr		*ip; // !! struct iphdr under linux and ip under mac
 	struct icmphdr		*hdr; // !! struct icmphdr under linux and icmp under mac
 }				t_pkt;
+
+static bool g_running;
 
 opt_t parse_opt(int ac, char **av);
 int handle_opt(opt_t opt);

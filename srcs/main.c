@@ -1,5 +1,12 @@
 #include "ft_ping.h"
 
+void	sig_handler(int sig)
+{
+	g_running = false;
+	printf("\n--- %s ping statistics ---\n", "ft_ping");
+	return;
+}
+
 void dns_lookup(char *hostname) {
 	struct addrinfo hints, *res;
 	struct sockaddr_in *addr;
@@ -8,9 +15,10 @@ void dns_lookup(char *hostname) {
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET; // IPv4
 	hints.ai_socktype = SOCK_STREAM;
-
-	if (getaddrinfo(hostname, NULL, &hints, &res) != 0) {
+	int err = getaddrinfo(hostname, NULL, &hints, &res);
+	if (err != 0) {
 		fprintf(stderr, "ping: %s: Name or service not known\n", hostname);
+		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
 		exit(1);
 	}
 
@@ -38,7 +46,17 @@ int main(int ac, char **av)
 	}
 	opt = parse_opt(ac, av);
 	handle_opt(opt);
+	signal(SIGINT, sig_handler);
+	signal(SIGQUIT, sig_handler);
+	g_running = true;
 	dns_lookup(opt.hostname);
 
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	while (g_running)
+	{
+		printf("ping\n");
+		sleep(1);
+	}
 	return 0;
 }
