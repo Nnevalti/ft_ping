@@ -13,6 +13,7 @@
 # include <string.h>
 # include <netinet/in.h>
 # include <netinet/ip_icmp.h>
+#include <sys/time.h>
 
 # define PKT_SIZE 64
 

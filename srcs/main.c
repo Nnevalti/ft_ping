@@ -2,8 +2,9 @@
 
 void	sig_handler(int sig)
 {
+	(void)sig;
 	g_running = false;
-	printf("\n--- %s ping statistics ---\n", "ft_ping");
+	printf("\n--- ft_ping statistics ---\n");
 	return;
 }
 
@@ -26,7 +27,6 @@ void dns_lookup(char *hostname) {
 	inet_ntop(AF_INET, &(addr->sin_addr), addrstr, INET_ADDRSTRLEN);
 
 	printf("PING %s (%s): 56 data bytes\n", hostname, addrstr);
-	printf("IPv4 Address: %s\n", addrstr);
 
 	freeaddrinfo(res);
 }
