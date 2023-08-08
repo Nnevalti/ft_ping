@@ -10,15 +10,27 @@ void print_help() {
 opt_t parse_opt(int ac, char **av) {
 	opt_t opt = {0, 0, 0, NULL};
 	int i = 1;
+
+	if (ac < 2)
+	{
+		fprintf(stderr, "Error: You must specify a hostname\n");
+		print_help();
+		exit(1);
+	}
 	while (i < ac) {
 		if (ft_strcmp(av[i], "-v") == 0) {
 			opt.verbose = 1;
 		}
 		else if (ft_strcmp(av[i], "-h") == 0) {
 			opt.help = 1;
-			return opt; // return early because we don't need to parse other options
+			return opt;
 		}
 		else if (av[i][0] != '-') {
+			if (opt.hostname != NULL) {
+				opt.err = 1;
+				fprintf(stderr, "Error: You can only specify one hostname\n");
+				return opt;
+			}
 			opt.hostname = av[i];
 		}
 		else {

@@ -2,61 +2,116 @@
 
 void	sig_handler(int sig)
 {
-	(void)sig;
-	g_running = false;
-	printf("\n--- ft_ping statistics ---\n");
+	if (sig == SIGQUIT)
+	{
+		g_running[1] = true;
+	}
+	if (sig == SIGINT) 
+	{
+		g_running[0] = false;
+	}
 	return;
 }
 
-void dns_lookup(char *hostname) {
-	struct addrinfo hints, *res;
-	struct sockaddr_in *addr;
-	char addrstr[INET_ADDRSTRLEN];
+void check_root()
+{
+	if (getuid() != 0)
+	{
+		printf("Error: You must be root to run this program\n");
+		exit(1);
+	}
+}
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET; // IPv4
-	hints.ai_socktype = SOCK_STREAM;
-	int err = getaddrinfo(hostname, NULL, &hints, &res);
+void init_params(env_t *env, char *hostname)
+{
+	g_running[0] = true;
+	g_running[1] = false;
+
+	env->hostname = hostname;
+	env->pid = getpid();
+
+	env->ttl = MAX_TTL;
+}
+
+void dns_lookup(env_t *env) {
+	int err;
+	struct sockaddr_in *addr;
+
+	memset(&env->hints, 0, sizeof(struct addrinfo));
+	env->hints.ai_family = AF_INET; // IPv4
+	env->hints.ai_socktype = SOCK_STREAM; // TCP protocol
+	err = getaddrinfo(env->hostname, NULL, &env->hints, &env->res);
 	if (err != 0) {
-		fprintf(stderr, "ping: %s: Name or service not known\n", hostname);
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
+		fprintf(stderr, "ft_ping: cannot resolve %s: Unknown host\n", env->hostname);
+		// fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
 		exit(1);
 	}
 
-	addr = (struct sockaddr_in *)res->ai_addr;
-	inet_ntop(AF_INET, &(addr->sin_addr), addrstr, INET_ADDRSTRLEN);
+	addr = (struct sockaddr_in *)env->res->ai_addr;
+	inet_ntop(AF_INET, &(addr->sin_addr), env->addrstr, INET_ADDRSTRLEN);
+}
 
-	printf("PING %s (%s): 56 data bytes\n", hostname, addrstr);
+void	set_socket(env_t *env)
+{
+	int		sock_fd;
+	struct timeval	timeout;
 
-	freeaddrinfo(res);
+	timeout.tv_sec = RECV_TIMEOUT;
+	timeout.tv_usec = 0;
+	sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+	if ((sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1)
+		fprintf(stderr, "Error: socket failed\n");
+	if ((setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout))) == -1)
+		fprintf(stderr, "Error: setsockopt failed\n");
+	if (setsockopt(sock_fd, IPPROTO_IP, IP_TTL, (const void *)&env->ttl, sizeof(env->ttl)) == -1)
+		fprintf(stderr, "Error: setsockopt failed\n");
+	env->sockfd = sock_fd;
+}
+
+void ping_loop(env_t *env)
+{
+	// create a raw socket with ICMP protocol
+	// get time of day
+	// send ICMP packet
+	// receive ICMP packet
+	// get time of day
+	// calculate time difference
+	// print statistics
+	// print error if any
+	// exit
+
+	// int ttl_val = 64, msg_count = 0, i, addr_len, flag = 1,
+		// msg_received_count = 0;
+	
+	set_socket(env);
+	printf("PING %s (%s): %d data bytes\n", env->hostname, env->addrstr, 56);
+	if (gettimeofday(&env->start, NULL) == -1)
+		fprintf(stderr, "Error: gettimeofday failed\n");
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	while (g_running[0])
+	{
+		printf("ping\n");
+		sleep(PING_SLEEP_RATE);
+	}
 }
 
 int main(int ac, char **av)
 {
 	opt_t opt;
-	if (getuid() != 0)
-	{
-		printf("Error: You must be root to run this program\n");
-		return 1;
-	}
-	if (ac < 2)
-	{
-		printf("Usage: %s <hostname>\n", av[0]);
-		return 1;
-	}
+	env_t env;
+
+	check_root();
 	opt = parse_opt(ac, av);
 	handle_opt(opt);
+
 	signal(SIGINT, sig_handler);
 	signal(SIGQUIT, sig_handler);
-	g_running = true;
-	dns_lookup(opt.hostname);
 
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	while (g_running)
-	{
-		printf("ping\n");
-		sleep(1);
-	}
+	init_params(&env, opt.hostname);
+	dns_lookup(&env);
+
+	ping_loop(&env);
+	freeaddrinfo(env.res);
 	return 0;
 }

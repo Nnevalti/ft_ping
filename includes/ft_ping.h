@@ -16,6 +16,9 @@
 #include <sys/time.h>
 
 # define PKT_SIZE 64
+# define MAX_TTL 64
+# define PING_SLEEP_RATE 1
+# define RECV_TIMEOUT 2
 
 typedef struct s_opt
 {
@@ -28,11 +31,28 @@ typedef struct s_opt
 typedef struct	s_pkt
 {
 	char			hdr_buf[PKT_SIZE];
-	struct iphdr		*ip; // !! struct iphdr under linux and ip under mac
+#if defined(__APPLE__) || defined(__MACH__)
+	struct icmp		*hdr; // !! struct icmp under mac and icmphdr under linux
+#else // linux
 	struct icmphdr		*hdr; // !! struct icmphdr under linux and icmp under mac
+#endif
 }				t_pkt;
 
-static bool g_running;
+typedef struct s_env
+{
+	char *hostname; // Hostname (e.g. google.com) or IP address
+	char addrstr[INET_ADDRSTRLEN]; // IP address as string
+	struct addrinfo		hints, *res;
+	pid_t pid;
+
+	int sockfd;
+	int ttl;
+	t_pkt pkt;
+
+	struct timeval start, end, diff;
+}				env_t;
+
+static bool g_running[2];
 
 opt_t parse_opt(int ac, char **av);
 int handle_opt(opt_t opt);
