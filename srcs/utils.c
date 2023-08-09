@@ -1,3 +1,14 @@
+#include "ft_ping.h"
+
+void check_root()
+{
+	if (getuid() != 0)
+	{
+		printf("Error: You must be root to run this program\n");
+		exit(1);
+	}
+}
+
 unsigned short	checksum(unsigned short *data, int len)
 {
 	unsigned long	checksum;

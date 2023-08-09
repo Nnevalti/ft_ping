@@ -18,7 +18,7 @@
 # define PKT_SIZE 64
 # define MAX_TTL 64
 # define PING_SLEEP_RATE 1
-# define RECV_TIMEOUT 2
+# define RECV_TIMEOUT 1
 
 typedef struct s_opt
 {
@@ -30,9 +30,21 @@ typedef struct s_opt
 
 typedef struct	s_pkt
 {
-	struct icmphdr		*hdr; // !! struct icmphdr under linux and icmp under mac
-	char				*hdr_buf;
+// if macos
+# if defined(__APPLE__) || defined(__MACH__)
+	struct icmp		hdr; // !! struct icmphdr under linux and icmp under mac
+	char			hdr_buf[PKT_SIZE - sizeof(struct icmp)];
+# elif defined(__linux__)
+	struct icmphdr	hdr;
+	char			hdr_buf[PKT_SIZE - sizeof(struct icmphdr)];
+# endif
 }				t_pkt;
+
+typedef struct	s_res
+{
+	struct iovec		iov[1];
+	struct msghdr		ret_hdr;
+}		t_res;
 
 typedef struct s_env
 {
@@ -44,6 +56,9 @@ typedef struct s_env
 	int sockfd;
 	int ttl;
 	t_pkt pkt;
+	unsigned int seq;
+
+	t_res response;
 
 	struct timeval start, end, diff;
 }				env_t;
@@ -56,6 +71,8 @@ int handle_opt(opt_t opt);
 /**
  * Utils 
 **/
+void check_root();
+unsigned short	checksum(unsigned short *data, int len);
 int ft_strcmp(char *s1, char *s2);
 
 #endif
