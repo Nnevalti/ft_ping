@@ -151,6 +151,12 @@ void send_ping(int ping_sockfd, struct sockaddr_in *ping_addr,
 	setsockopt(ping_sockfd, SOL_SOCKET, SO_RCVTIMEO,
 			   (const char *)&tv_out, sizeof tv_out);
 
+	printf("PING: %s (%s) with %d bytes of data.\n",
+		   ping_dom, ping_ip, PING_PKT_S + sizeof(struct ip));
+	// print icmp header size, ip header size and data payload size
+	printf("ICMP header size %d Bytes\t", sizeof(struct icmp));
+	printf("IP header size %d Bytes\t", sizeof(struct ip));
+	printf("Data payload size %d Bytes\n", PING_PKT_S);
 	// send icmp packet in an infinite loop
 	while (pingloop)
 	{
@@ -161,7 +167,7 @@ void send_ping(int ping_sockfd, struct sockaddr_in *ping_addr,
 		bzero(&pckt, sizeof(pckt));
 
 		pckt.hdr.icmp_type = ICMP_ECHO;
-		pckt.hdr.icmp_seq = getpid();
+		pckt.hdr.icmp_id = getpid();
 
 		for (i = 0; i < sizeof(pckt.msg) - 1; i++)
 			pckt.msg[i] = i + '0';

@@ -31,6 +31,12 @@ void init_params(env_t *env, char *hostname)
 	env->pid = getpid();
 
 	env->ttl = MAX_TTL;
+	env->pkt.hdr_buf = malloc(PKT_SIZE - sizeof(env->pkt.hdr));
+	if (!env->pkt.hdr_buf)
+	{
+		fprintf(stderr, "Error: malloc failed\n");
+		exit(1);
+	}
 }
 
 void dns_lookup(env_t *env) {
@@ -70,30 +76,24 @@ void	set_socket(env_t *env)
 
 void ping_loop(env_t *env)
 {
-	// create a raw socket with ICMP protocol
-	// get time of day
-	// send ICMP packet
-	// receive ICMP packet
-	// get time of day
-	// calculate time difference
-	// print statistics
-	// print error if any
-	// exit
-
 	// int ttl_val = 64, msg_count = 0, i, addr_len, flag = 1,
 		// msg_received_count = 0;
 	
 	set_socket(env);
-	printf("PING %s (%s): %d data bytes\n", env->hostname, env->addrstr, 56);
+	printf("PING %s (%s): %lu data bytes\n", env->hostname, env->addrstr, PKT_SIZE - (sizeof(env->pkt.hdr)));
+	// print size of icmphdr struct
 	if (gettimeofday(&env->start, NULL) == -1)
 		fprintf(stderr, "Error: gettimeofday failed\n");
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
 	while (g_running[0])
 	{
+		// send_ping(env);
+		// receive_ping(env);
+		// if (g_running[1])
+		// print_stats(env);
 		printf("ping\n");
 		sleep(PING_SLEEP_RATE);
 	}
+	// print_stats(env);
 }
 
 int main(int ac, char **av)
@@ -113,5 +113,6 @@ int main(int ac, char **av)
 
 	ping_loop(&env);
 	freeaddrinfo(env.res);
+	free(env.pkt.hdr_buf);
 	return 0;
 }

@@ -30,12 +30,8 @@ typedef struct s_opt
 
 typedef struct	s_pkt
 {
-	char			hdr_buf[PKT_SIZE];
-#if defined(__APPLE__) || defined(__MACH__)
-	struct icmp		*hdr; // !! struct icmp under mac and icmphdr under linux
-#else // linux
 	struct icmphdr		*hdr; // !! struct icmphdr under linux and icmp under mac
-#endif
+	char				*hdr_buf;
 }				t_pkt;
 
 typedef struct s_env
