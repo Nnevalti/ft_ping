@@ -5,7 +5,7 @@ void check_root()
 	if (getuid() != 0)
 	{
 		printf("Error: You must be root to run this program\n");
-		exit(1);
+		exit(errno);
 	}
 }
 

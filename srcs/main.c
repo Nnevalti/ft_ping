@@ -13,6 +13,17 @@ void	sig_handler(int sig)
 	return;
 }
 
+void exit_clean(env_t *env, char *msg)
+{
+	if (msg)
+		fprintf(stderr, "Error: %s\n", msg);
+	if (env->res)
+		freeaddrinfo(env->res);
+	if (env->sockfd)
+		close(env->sockfd);
+	exit(errno);
+}
+
 void init_params(env_t *env, char *hostname)
 {
 	g_running[0] = true;
@@ -22,6 +33,8 @@ void init_params(env_t *env, char *hostname)
 	env->pid = getpid();
 
 	env->ttl = MAX_TTL;
+
+	env->pkt_sent = 0;
 }
 
 void dns_lookup(env_t *env) {
@@ -35,14 +48,11 @@ void dns_lookup(env_t *env) {
 	if (err != 0) {
 		fprintf(stderr, "ft_ping: cannot resolve %s: Unknown host\n", env->hostname);
 		// fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
-		exit(1);
+		exit(errno);
 	}
 
 	addr = (struct sockaddr_in *)env->res->ai_addr;
 	inet_ntop(AF_INET, &(addr->sin_addr), env->addrstr, INET_ADDRSTRLEN);
-	// print info on addr
-	printf("PING %s (%s) %d(%d) bytes of data.\n", env->hostname, env->addrstr, PKT_SIZE, PKT_SIZE + 8);
-
 }
 
 void	set_socket(env_t *env)
@@ -55,15 +65,15 @@ void	set_socket(env_t *env)
 
 	sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (sock_fd < 0)
-		fprintf(stderr, "Error: socket failed\n");
+		exit_clean(env, "socket failed");
 	if (setsockopt(sock_fd, IPPROTO_IP, IP_TTL, (const void *)&env->ttl, sizeof(env->ttl)) == -1)
-		fprintf(stderr, "Error: setsockopt failed\n");
+		exit_clean(env, "setsockopt failed");
 	if ((setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout))) == -1)
-		fprintf(stderr, "Error: setsockopt failed\n");
+		exit_clean(env, "setsockopt failed");
 	env->sockfd = sock_fd;
 }
 
-void init_packet(env_t *env)
+void init_send(env_t *env)
 {
 	memset(&env->pkt, 0, sizeof(env->pkt));
 		for (unsigned int i = 0; i < (PKT_SIZE - sizeof(env->pkt.hdr)); i++)
@@ -86,52 +96,98 @@ void init_packet(env_t *env)
 	#endif
 }
 
+void init_recv(env_t *env)
+{
+	memset(&env->response.ret_hdr, 0, sizeof(env->response.ret_hdr));
+	memset(&env->pkt.hdr_buf, 0, sizeof(env->pkt.hdr_buf));
+	env->response.iov->iov_base = (void *)env->pkt.hdr_buf;
+	env->response.iov->iov_len = sizeof(env->pkt.hdr_buf);
+	env->response.ret_hdr.msg_iov = env->response.iov;
+	env->response.ret_hdr.msg_iovlen = 1;
+}
+
+void send_ping(env_t *env)
+{
+	int err;
+
+	init_send(env);
+	if ((err = sendto(env->sockfd, &env->pkt, sizeof(env->pkt), 0, env->res->ai_addr, env->res->ai_addrlen)) < 0)
+		exit_clean(env, "sendto failed");
+	if (gettimeofday(&env->send, NULL) < 0)
+		exit_clean(env, "gettimeofday failed");
+	env->pkt_sent++;
+}
+
+
+void print_stats(env_t *env, unsigned int ret)
+{
+	double time_elapsed = (env->receive.tv_sec - env->send.tv_sec) * 1000.0;
+	time_elapsed += (env->receive.tv_usec - env->send.tv_usec) / 1000.0;
+	printf("%u bytes from %s (%s): icmp_seq=%d ttl=%d time=%.3f ms\n", ret, env->hostname, env->addrstr, env->seq - 1, env->ttl, time_elapsed);
+	// min and max rtt
+	if (time_elapsed < env->min_rtt || env->seq == 1)
+		env->min_rtt = time_elapsed;
+	if (time_elapsed > env->max_rtt)
+		env->max_rtt = time_elapsed;
+}
+
+void recv_ping(env_t *env)
+{
+	int err;
+
+	init_recv(env);
+	if ((err = recvmsg(env->sockfd, &env->response.ret_hdr, 0)) < 0)
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			printf("PING: Timeout for icmp_seq %d\n", env->seq);
+		else
+			exit_clean(env, "recvmsg failed");
+	}
+	else {
+		// if (env->response.ret_hdr.msg_namelen != env->res->ai_addrlen)
+		// 	exit_clean(env, "recvmsg failed");
+		if (env->seq - 1 != env->pkt.hdr.icmp_seq)
+			exit_clean(env, "recvmsg failed");
+		if (gettimeofday(&env->receive, NULL) == -1)
+			exit_clean(env, "gettimeofday failed");
+		print_stats(env, err);
+		env->pkt_recv++;
+	}
+}
+
+void calculate_stats(env_t *env)
+{
+	env->avg_rtt = (env->min_rtt + env->max_rtt) / 2.0;
+	env->mdev_rtt = env->max_rtt - env->min_rtt;
+}
+
+void print_final_stats(env_t *env)
+{
+	printf("\n--- %s ping statistics ---\n", env->hostname);
+	printf("%d packets transmitted, %d received, %f%% packet loss\n", env->pkt_sent, env->pkt_recv, (env->pkt_sent - env->pkt_recv) / env->pkt_sent * 100.0);
+	printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", env->min_rtt, env->avg_rtt, env->max_rtt, env->mdev_rtt);
+}
+
 void ping_loop(env_t *env)
 {
-	// int ttl_val = 64, msg_count = 0, i, addr_len, flag = 1,
-		// msg_received_count = 0;
-	int err;
+	// int flag = 1, msg_received_count = 0;
 
 	set_socket(env);
 	printf("PING %s (%s): %lu data bytes\n", env->hostname, env->addrstr, PKT_SIZE - (sizeof(env->pkt.hdr)));
 
-	if (gettimeofday(&env->start, NULL) == -1)
-		fprintf(stderr, "Error: gettimeofday failed\n");
+	if (gettimeofday(&env->start, NULL) < 0)
+		exit_clean(env, "gettimeofday failed");
+
 	while (g_running[0])
 	{
-		init_packet(env);
-		printf("ping\n");
-		if ((err = sendto(env->sockfd, &env->pkt, sizeof(env->pkt), 0, env->res->ai_addr, env->res->ai_addrlen)) < 0) {
-			fprintf(stderr, "Error: sendto failed\n");
-			perror("sendto");
-		}
-		
-		memset(&env->response.ret_hdr, 0, sizeof(env->response.ret_hdr));
-		memset(&env->pkt.hdr_buf, 0, sizeof(env->pkt.hdr_buf));
-		env->response.iov->iov_base = (void *)env->pkt.hdr_buf;
-		env->response.iov->iov_len = sizeof(env->pkt.hdr_buf);
-		env->response.ret_hdr.msg_name = NULL;
-		env->response.ret_hdr.msg_namelen = 0;
-		env->response.ret_hdr.msg_iov = env->response.iov;
-		env->response.ret_hdr.msg_iovlen = 1;
-		
-		if ((err = recvmsg(env->sockfd, &env->response.ret_hdr, 0)) < 0) {
-			fprintf(stderr, "Error: recvfrom failed\n");
-			fprintf(stderr, "%s\n", gai_strerror(err));
-			perror("recvmsg");
-		}
-		else {
-			printf("pong\n");
-			// if (gettimeofday(&env->end, NULL) == -1)
-			// 	fprintf(stderr, "Error: gettimeofday failed\n");
-			// print_stats(env);
-		}		
+		send_ping(env);
+		recv_ping(env);
+		calculate_stats(env);
 		// if (g_running[1])
 		// print_stats(env);
-		printf("ping\n");
 		sleep(PING_SLEEP_RATE);
 	}
-	// print_stats(env);
+	print_final_stats(env);
 }
 
 int main(int ac, char **av)

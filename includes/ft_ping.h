@@ -14,6 +14,7 @@
 # include <netinet/in.h>
 # include <netinet/ip_icmp.h>
 #include <sys/time.h>
+#include <errno.h>
 
 # define PKT_SIZE 64
 # define MAX_TTL 64
@@ -32,7 +33,7 @@ typedef struct	s_pkt
 {
 // if macos
 # if defined(__APPLE__) || defined(__MACH__)
-	struct icmp		hdr; // !! struct icmphdr under linux and icmp under mac
+	struct icmp		hdr;
 	char			hdr_buf[PKT_SIZE - sizeof(struct icmp)];
 # elif defined(__linux__)
 	struct icmphdr	hdr;
@@ -56,11 +57,13 @@ typedef struct s_env
 	int sockfd;
 	int ttl;
 	t_pkt pkt;
+	unsigned int pkt_sent, pkt_recv;
 	unsigned int seq;
 
 	t_res response;
 
-	struct timeval start, end, diff;
+	struct timeval start, end, diff, send, receive;
+	double min_rtt, max_rtt, avg_rtt, mdev_rtt;
 }				env_t;
 
 static bool g_running[2];

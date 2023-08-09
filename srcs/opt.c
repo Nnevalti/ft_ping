@@ -17,6 +17,7 @@ opt_t parse_opt(int ac, char **av) {
 		print_help();
 		exit(1);
 	}
+
 	while (i < ac) {
 		if (ft_strcmp(av[i], "-v") == 0) {
 			opt.verbose = 1;
@@ -57,6 +58,7 @@ int handle_opt(opt_t opt) {
 	}
 	if (opt.hostname == NULL) {
 		fprintf(stderr, "Error: hostname is required\n");
+		print_help();
 		exit(1);
 	}
 	return 0;
