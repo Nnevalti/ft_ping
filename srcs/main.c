@@ -139,12 +139,10 @@ void recv_ping(env_t *env)
 	ret = recvmsg(env->sockfd, &env->response.ret_hdr, 0);
 	if (ret > 0)
 	{
-		if (env->pkt.hdr.icmp_id == env->pid)
+		if (env->pkt.hdr.icmp_id == env->pid || env->seq - 1 != env->pkt.hdr.icmp_seq) {
+			printf("recvmsg failed: %s\n", strerror(errno));
 			exit_clean(env, "recvmsg failed");
-		// if (env->response.ret_hdr.msg_namelen != env->res->ai_addrlen)
-		// 	exit_clean(env, "recvmsg failed");
-		if (env->seq - 1 != env->pkt.hdr.icmp_seq)
-			exit_clean(env, "recvmsg failed");
+		}
 		if (gettimeofday(&env->receive, NULL) == -1)
 			exit_clean(env, "gettimeofday failed");
 		print_stats(env, ret);
@@ -153,8 +151,10 @@ void recv_ping(env_t *env)
 	else {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			printf("Request timeout for icmp_seq %d\n", env->seq);
-		else
+		else {
+			printf("recvmsg failed: %s\n", strerror(errno));
 			exit_clean(env, "recvmsg failed");
+		}
 	}
 }
 
