@@ -112,7 +112,7 @@ void send_ping(env_t *env)
 
 	init_send(env);
 	if ((err = sendto(env->sockfd, &env->pkt, sizeof(env->pkt), 0, env->res->ai_addr, env->res->ai_addrlen)) < 0)
-		exit_clean(env, "sendto failed");
+		fprintf(stderr, "ping: sendto: %s\n", strerror(errno));
 	if (gettimeofday(&env->send, NULL) < 0)
 		exit_clean(env, "gettimeofday failed");
 	env->pkt_sent++;
@@ -133,25 +133,28 @@ void print_stats(env_t *env, unsigned int ret)
 
 void recv_ping(env_t *env)
 {
-	int err;
+	int ret;
 
 	init_recv(env);
-	if ((err = recvmsg(env->sockfd, &env->response.ret_hdr, 0)) < 0)
+	ret = recvmsg(env->sockfd, &env->response.ret_hdr, 0);
+	if (ret > 0)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			printf("PING: Timeout for icmp_seq %d\n", env->seq);
-		else
-			exit_clean(env, "recvmsg failed");
-	}
-	else {
+		if (env->pkt.hdr.icmp_id == env->pid)
+			exit_clean(env, "recvmsg failed"
 		// if (env->response.ret_hdr.msg_namelen != env->res->ai_addrlen)
 		// 	exit_clean(env, "recvmsg failed");
 		if (env->seq - 1 != env->pkt.hdr.icmp_seq)
 			exit_clean(env, "recvmsg failed");
 		if (gettimeofday(&env->receive, NULL) == -1)
 			exit_clean(env, "gettimeofday failed");
-		print_stats(env, err);
+		print_stats(env, ret);
 		env->pkt_recv++;
+	}
+	else {
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			printf("Request timeout for icmp_seq %d\n", env->seq);
+		else
+			exit_clean(env, "recvmsg failed");
 	}
 }
 
@@ -163,6 +166,8 @@ void calculate_stats(env_t *env)
 
 void print_final_stats(env_t *env)
 {
+	if (gettimeofday(&env->end, NULL) == -1)
+		exit_clean(env, "gettimeofday failed");
 	printf("\n--- %s ping statistics ---\n", env->hostname);
 	printf("%d packets transmitted, %d received, %f%% packet loss\n", env->pkt_sent, env->pkt_recv, (env->pkt_sent - env->pkt_recv) / env->pkt_sent * 100.0);
 	printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", env->min_rtt, env->avg_rtt, env->max_rtt, env->mdev_rtt);
@@ -185,7 +190,7 @@ void ping_loop(env_t *env)
 		calculate_stats(env);
 		// if (g_running[1])
 		// print_stats(env);
-		sleep(PING_SLEEP_RATE);
+		usleep(PING_SLEEP_RATE * 1000000 );
 	}
 	print_final_stats(env);
 }
