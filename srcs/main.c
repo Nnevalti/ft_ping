@@ -140,7 +140,7 @@ void recv_ping(env_t *env)
 	if (ret > 0)
 	{
 		if (env->pkt.hdr.icmp_id == env->pid)
-			exit_clean(env, "recvmsg failed"
+			exit_clean(env, "recvmsg failed");
 		// if (env->response.ret_hdr.msg_namelen != env->res->ai_addrlen)
 		// 	exit_clean(env, "recvmsg failed");
 		if (env->seq - 1 != env->pkt.hdr.icmp_seq)
