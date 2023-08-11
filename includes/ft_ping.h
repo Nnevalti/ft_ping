@@ -15,6 +15,8 @@
 # include <netinet/ip_icmp.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <math.h>
+#include <signal.h>
 
 # define PKT_SIZE 64
 # define MAX_TTL 64
@@ -63,7 +65,8 @@ typedef struct s_env
 	t_res response;
 
 	struct timeval start, end, diff, send, receive;
-	double min_rtt, max_rtt, avg_rtt, mdev_rtt;
+	double min_rtt, max_rtt, avg_rtt, stddev_rtt;
+	double *rtt;
 }				env_t;
 
 static bool g_running[2];
@@ -74,6 +77,8 @@ int handle_opt(opt_t opt);
 /**
  * Utils 
 **/
+double ft_pow(int base, int exp);
+double ft_sqrt(double x);
 void check_root();
 unsigned short	checksum(unsigned short *data, int len);
 int ft_strcmp(char *s1, char *s2);
