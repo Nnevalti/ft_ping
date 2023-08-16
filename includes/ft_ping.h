@@ -25,9 +25,9 @@
 
 typedef struct s_opt
 {
-	int verbose;
-	int help;
-	int err;
+	unsigned int verbose: 1;
+	unsigned int help: 1;
+	unsigned int err: 1;
 	char *hostname;
 } opt_t;
 
