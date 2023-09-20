@@ -80,7 +80,7 @@ void check_icmp_errors(struct icmp *icmp)
 			break;
 		case ICMP_UNREACH_NEEDFRAG:
 			printf("frag needed and DF set (MTU %d)\n",
-						 ntohs(icmp->icmp_nextmtu));
+				   ntohs(icmp->icmp_nextmtu));
 			break;
 		case ICMP_UNREACH_SRCFAIL:
 			printf("Source Route Failed\n");
@@ -90,7 +90,7 @@ void check_icmp_errors(struct icmp *icmp)
 			break;
 		default:
 			printf("Dest Unreachable, Bad Code: %d\n",
-						 icmp->icmp_code);
+				   icmp->icmp_code);
 			break;
 		}
 		break;
@@ -132,7 +132,7 @@ void check_icmp_errors(struct icmp *icmp)
 			break;
 		default:
 			printf("Time exceeded, Bad Code: %d\n",
-						 icmp->icmp_code);
+				   icmp->icmp_code);
 			break;
 		}
 		break;

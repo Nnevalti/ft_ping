@@ -9,9 +9,9 @@ void check_root()
 	}
 }
 
-unsigned short	checksum(unsigned short *data, int len)
+unsigned short checksum(unsigned short *data, int len)
 {
-	unsigned long	checksum;
+	unsigned long checksum;
 
 	checksum = 0;
 	while (len > 1)
@@ -20,14 +20,16 @@ unsigned short	checksum(unsigned short *data, int len)
 		len = len - sizeof(unsigned short);
 	}
 	if (len)
-		checksum = checksum + *(unsigned char*)data;
+		checksum = checksum + *(unsigned char *)data;
 	checksum = (checksum >> 16) + (checksum & 0xffff);
 	checksum = checksum + (checksum >> 16);
 	return (unsigned short)(~checksum);
 }
 
-int ft_strcmp(char *s1, char *s2) {
-	while (*s1 && *s2 && *s1 == *s2) {
+int ft_strcmp(char *s1, char *s2)
+{
+	while (*s1 && *s2 && *s1 == *s2)
+	{
 		s1++;
 		s2++;
 	}

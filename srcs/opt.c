@@ -1,13 +1,15 @@
 #include "ft_ping.h"
 
-void print_help() {
+void print_help()
+{
 	printf("Usage: ping [-vh] <hostname>\n");
 	printf("Options:\n");
 	printf("  -v: verbose mode\n");
 	printf("  -h: print this help message\n");
 }
 
-opt_t parse_opt(int ac, char **av) {
+opt_t parse_opt(int ac, char **av)
+{
 	opt_t opt = {0, 0, 0, NULL};
 	int i = 1;
 
@@ -18,23 +20,29 @@ opt_t parse_opt(int ac, char **av) {
 		exit(1);
 	}
 
-	while (i < ac) {
-		if (ft_strcmp(av[i], "-v") == 0) {
+	while (i < ac)
+	{
+		if (ft_strcmp(av[i], "-v") == 0)
+		{
 			opt.verbose = 1;
 		}
-		else if (ft_strcmp(av[i], "-h") == 0) {
+		else if (ft_strcmp(av[i], "-h") == 0)
+		{
 			opt.help = 1;
 			return opt;
 		}
-		else if (av[i][0] != '-') {
-			if (opt.hostname != NULL) {
+		else if (av[i][0] != '-')
+		{
+			if (opt.hostname != NULL)
+			{
 				opt.err = 1;
 				fprintf(stderr, "Error: You can only specify one hostname\n");
 				return opt;
 			}
 			opt.hostname = av[i];
 		}
-		else {
+		else
+		{
 			opt.err = 1;
 			fprintf(stderr, "Invalid option: %s\n", av[i]);
 			return opt;
@@ -44,19 +52,24 @@ opt_t parse_opt(int ac, char **av) {
 	return opt;
 }
 
-int handle_opt(opt_t opt) {
-	if (opt.err) {
+int handle_opt(opt_t opt)
+{
+	if (opt.err)
+	{
 		print_help();
 		exit(1);
 	}
-	if (opt.help) {
+	if (opt.help)
+	{
 		print_help();
 		exit(0);
 	}
-	if (opt.verbose) {
+	if (opt.verbose)
+	{
 		printf("verbose mode enabled\n");
 	}
-	if (opt.hostname == NULL) {
+	if (opt.hostname == NULL)
+	{
 		fprintf(stderr, "Error: hostname is required\n");
 		print_help();
 		exit(1);

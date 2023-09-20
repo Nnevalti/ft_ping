@@ -30,7 +30,7 @@ void print_errors(env_t *env)
 {
 	struct ip *ip = (struct ip *)(env->response.iov->iov_base);
 	struct icmp *icmp = (struct icmp *)(env->response.iov->iov_base + (ip->ip_hl << 2));
-	
+
 	printf("From gateway (%s) icmp_seq=%d type=%d code=%d\n", env->addrstr, env->seq - 1, icmp->icmp_type, icmp->icmp_code);
 }
 

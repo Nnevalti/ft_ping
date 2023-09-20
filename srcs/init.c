@@ -1,9 +1,9 @@
 #include "ft_ping.h"
 
-void	set_socket(env_t *env)
+void set_socket(env_t *env)
 {
-	int		sock_fd;
-	struct timeval	timeout;
+	int sock_fd;
+	struct timeval timeout;
 
 	timeout.tv_sec = RECV_TIMEOUT;
 	timeout.tv_usec = 0;
@@ -26,19 +26,19 @@ void init_send(env_t *env)
 		env->pkt.hdr_buf[i] = i + '0';
 	}
 
-	#if defined(__linux__)
-		env->pkt.hdr->type = ICMP_ECHO;
-		env->pkt.hdr->code = 0;
-		env->pkt.hdr->un.echo.sequence = htons(env->seq);
-		env->pkt.hdr->un.echo.id = htons(env->pid);
-		env->pkt.hdr->checksum = checksum(env->pkt, sizeof(env->pkt));
-	#elif defined(__APPLE__) || defined(__MACH__)
-		env->pkt.hdr.icmp_type = ICMP_ECHO;
-		env->pkt.hdr.icmp_code = 0;
-		env->pkt.hdr.icmp_seq = htons(env->seq);
-		env->pkt.hdr.icmp_id = htons(env->pid);
-		env->pkt.hdr.icmp_cksum = checksum((unsigned short *)&env->pkt, sizeof(env->pkt));
-	#endif
+#if defined(__linux__)
+	env->pkt.hdr->type = ICMP_ECHO;
+	env->pkt.hdr->code = 0;
+	env->pkt.hdr->un.echo.sequence = htons(env->seq);
+	env->pkt.hdr->un.echo.id = htons(env->pid);
+	env->pkt.hdr->checksum = checksum(env->pkt, sizeof(env->pkt));
+#elif defined(__APPLE__) || defined(__MACH__)
+	env->pkt.hdr.icmp_type = ICMP_ECHO;
+	env->pkt.hdr.icmp_code = 0;
+	env->pkt.hdr.icmp_seq = htons(env->seq);
+	env->pkt.hdr.icmp_id = htons(env->pid);
+	env->pkt.hdr.icmp_cksum = checksum((unsigned short *)&env->pkt, sizeof(env->pkt));
+#endif
 	env->seq++;
 }
 
