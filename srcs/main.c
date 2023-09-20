@@ -64,7 +64,7 @@ void recv_ping(env_t *env)
 	ret = recvmsg(env->sockfd, &env->response.ret_hdr, 0);
 	if (ret > 0)
 	{
-		if (env->pkt.hdr.icmp_id == env->pid || env->seq - 1 == env->pkt.hdr.icmp_seq) {
+		if (ntohs(env->pkt.hdr.icmp_id) == env->pid && env->seq - 1 == ntohs(env->pkt.hdr.icmp_seq)) {
 			struct ip *ip = (struct ip *)(env->response.iov->iov_base);
 			struct icmp *icmp = (struct icmp *)(env->response.iov->iov_base + (ip->ip_hl << 2));
 			if (gettimeofday(&env->receive, NULL) == -1)
@@ -75,14 +75,14 @@ void recv_ping(env_t *env)
 				print_stats(env, ret);
 			}
 			else if (icmp->icmp_type == ICMP_TIMXCEED && icmp->icmp_code == ICMP_TIMXCEED_INTRANS)
-				print_ttl(env, ret);
-			else if (icmp->icmp_type != ICMP_ECHOREPLY && icmp->icmp_type != ICMP_TIMXCEED)
-				print_errors(env);
+				print_ttl(env, ret, ntohs(icmp->icmp_seq));
+			else if (env->opt.verbose)
+				printf("Received ICMP packet with type %d code %d\n", icmp->icmp_type, icmp->icmp_code);
 		}
 	}
 	else {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			printf("Request timeout for icmp_seq %d\n", env->seq);
+			printf("Request timeout for icmp_seq %d\n", env->seq - 1);
 		else {
 			printf("recvmsg failed: %s\n", strerror(errno));
 			exit_clean(env, "recvmsg failed");
@@ -136,17 +136,16 @@ void ping_loop(env_t *env)
 
 int main(int ac, char **av)
 {
-	opt_t opt;
 	env_t env;
 
 	check_root();
-	opt = parse_opt(ac, av);
-	handle_opt(opt);
+	env.opt = parse_opt(ac, av);
+	handle_opt(env.opt);
 
 	signal(SIGINT, sig_handler);
 	signal(SIGQUIT, sig_handler);
 
-	init_params(&env, opt.hostname);
+	init_params(&env, env.opt.hostname);
 	dns_lookup(&env);
 
 	ping_loop(&env);

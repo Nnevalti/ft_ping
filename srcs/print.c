@@ -26,12 +26,12 @@ void print_stats(env_t *env, unsigned int ret)
 	}
 }
 
-void	print_ttl(env_t *env, unsigned int ret)
+void	print_ttl(env_t *env, unsigned int ret, unsigned int seq)
 {
 	char	str[INET_ADDRSTRLEN];
 	
-	printf("Request timeout for icmp_seq %d\n", env->seq - 1);
-	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.3f ms\n\n", ret, env->hostname, inet_ntop(AF_INET, (void*)&env->addrstr, str, INET_ADDRSTRLEN), env->seq - 1, env->ttl, 0.0);
+	printf("Request timeout for icmp_seq %d\n", seq);
+	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.3f ms\n\n", ret, env->hostname, inet_ntop(AF_INET, (void*)&env->addrstr, str, INET_ADDRSTRLEN), seq, env->ttl, 0.0);
 }
 
 void print_errors(env_t *env)
