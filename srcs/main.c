@@ -28,7 +28,6 @@ void init_params(env_t *env, char *hostname)
 {
 	g_running[0] = true;
 	g_running[1] = false;
-
 	env->hostname = hostname;
 	env->pid = getpid();
 
@@ -45,75 +44,6 @@ void init_params(env_t *env, char *hostname)
 	env->rtt = NULL;
 }
 
-void dns_lookup(env_t *env) {
-	int err;
-	struct sockaddr_in *addr;
-
-	memset(&env->hints, 0, sizeof(struct addrinfo));
-	env->hints.ai_family = AF_INET; // IPv4
-	env->hints.ai_socktype = SOCK_STREAM; // TCP protocol
-	err = getaddrinfo(env->hostname, NULL, &env->hints, &env->res);
-	if (err != 0) {
-		fprintf(stderr, "ft_ping: cannot resolve %s: Unknown host\n", env->hostname);
-		// fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
-		exit(errno);
-	}
-
-	addr = (struct sockaddr_in *)env->res->ai_addr;
-	inet_ntop(AF_INET, &(addr->sin_addr), env->addrstr, INET_ADDRSTRLEN);
-}
-
-void	set_socket(env_t *env)
-{
-	int		sock_fd;
-	struct timeval	timeout;
-
-	timeout.tv_sec = RECV_TIMEOUT;
-	timeout.tv_usec = 0;
-
-	sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-	if (sock_fd < 0)
-		exit_clean(env, "socket failed");
-	if (setsockopt(sock_fd, IPPROTO_IP, IP_TTL, (const void *)&env->ttl, sizeof(env->ttl)) == -1)
-		exit_clean(env, "setsockopt failed");
-	if ((setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout))) == -1)
-		exit_clean(env, "setsockopt failed");
-	env->sockfd = sock_fd;
-}
-
-void init_send(env_t *env)
-{
-	memset(&env->pkt, 0, sizeof(env->pkt));
-	for (unsigned int i = 0; i < (PKT_SIZE - sizeof(env->pkt.hdr)); i++)
-	{
-		env->pkt.hdr_buf[i] = i + '0';
-	}
-
-	#if defined(__linux__)
-		env->pkt.hdr->type = ICMP_ECHO;
-		env->pkt.hdr->code = 0;
-		env->pkt.hdr->un.echo.sequence = env->seq++;
-		env->pkt.hdr->un.echo.id = env->pid;
-		env->pkt.hdr->checksum = checksum(env->pkt, sizeof(env->pkt));
-	#elif defined(__APPLE__) || defined(__MACH__)
-		env->pkt.hdr.icmp_type = ICMP_ECHO;
-		env->pkt.hdr.icmp_code = 0;
-		env->pkt.hdr.icmp_seq = env->seq++;
-		env->pkt.hdr.icmp_id = env->pid;
-		env->pkt.hdr.icmp_cksum = checksum((unsigned short *)&env->pkt, sizeof(env->pkt));
-	#endif
-}
-
-void init_recv(env_t *env)
-{
-	memset(&env->response.ret_hdr, 0, sizeof(env->response.ret_hdr));
-	memset(&env->pkt.hdr_buf, 0, sizeof(env->pkt.hdr_buf));
-	env->response.iov->iov_base = (void *)env->pkt.hdr_buf;
-	env->response.iov->iov_len = sizeof(env->pkt.hdr_buf);
-	env->response.ret_hdr.msg_iov = env->response.iov;
-	env->response.ret_hdr.msg_iovlen = 1;
-}
-
 void send_ping(env_t *env)
 {
 	int err;
@@ -124,49 +54,6 @@ void send_ping(env_t *env)
 	if (gettimeofday(&env->send, NULL) < 0)
 		exit_clean(env, "gettimeofday failed");
 	env->pkt_sent++;
-}
-
-
-void print_stats(env_t *env, unsigned int ret)
-{
-	double time_elapsed = (env->receive.tv_sec - env->send.tv_sec) * 1000.0;
-	time_elapsed += (env->receive.tv_usec - env->send.tv_usec) / 1000.0;
-
-	printf("%u bytes from %s (%s): icmp_seq=%d ttl=%d time=%.3f ms\n", ret, env->hostname, env->addrstr, env->seq - 1, env->ttl, time_elapsed);
-
-	if (time_elapsed < env->min_rtt || env->seq == 1)
-		env->min_rtt = time_elapsed;
-	if (time_elapsed > env->max_rtt)
-		env->max_rtt = time_elapsed;
-
-	if (env->seq == 1)
-	{
-		env->rtt = (double *)malloc(sizeof(double) + 1);
-		env->rtt[0] = time_elapsed;
-		env->rtt[1] = -1;
-	}
-	else
-	{
-		env->rtt = (double *)realloc(env->rtt, sizeof(double) * (env->seq + 1));
-		env->rtt[env->seq - 1] = time_elapsed;
-		env->rtt[env->seq] = -1;
-	}
-}
-
-void	print_ttl(env_t *env, unsigned int ret)
-{
-	char	str[INET_ADDRSTRLEN];
-	
-	printf("Request timeout for icmp_seq %d\n", env->seq - 1);
-	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.3f ms\n\n", ret, env->hostname, inet_ntop(AF_INET, (void*)&env->addrstr, str, INET_ADDRSTRLEN), env->seq - 1, env->ttl, 0.0);
-}
-
-void print_errors(env_t *env)
-{
-	struct ip *ip = (struct ip *)(env->response.iov->iov_base);
-	struct icmp *icmp = (struct icmp *)(env->response.iov->iov_base + (ip->ip_hl << 2));
-	
-	printf("From gateway (%s) icmp_seq=%d type=%d code=%d\n", env->addrstr, env->seq - 1, icmp->icmp_type, icmp->icmp_code);
 }
 
 void recv_ping(env_t *env)
@@ -220,20 +107,6 @@ void calculate_stats(env_t *env)
 		double variance = squared_diff_sum / env->pkt_recv;
 		env->stddev_rtt = sqrt(variance);
 	}
-}
-
-void print_stats_rtt(env_t *env)
-{
-	printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", env->min_rtt, env->avg_rtt, env->max_rtt, env->stddev_rtt);
-}
-
-void print_final_stats(env_t *env)
-{
-	if (gettimeofday(&env->end, NULL) == -1)
-		exit_clean(env, "gettimeofday failed");
-	printf("\n--- %s ping statistics ---\n", env->hostname);
-	printf("%d packets transmitted, %d received, %f%% packet loss\n", env->pkt_sent, env->pkt_recv, (env->pkt_sent - env->pkt_recv) / env->pkt_sent * 100.0);
-	printf("rtt min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", env->min_rtt, env->avg_rtt, env->max_rtt, env->stddev_rtt);
 }
 
 void ping_loop(env_t *env)

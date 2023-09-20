@@ -5,6 +5,9 @@ FLAGS   = -Wall -Wextra -Werror -g
 DIR_INC = -I ./includes/
 
 SRCS 	:= 	main.c \
+			dns_lookup.c \
+			init.c \
+			print.c \
 			opt.c \
 			utils.c
 
