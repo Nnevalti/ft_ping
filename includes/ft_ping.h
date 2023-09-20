@@ -87,7 +87,6 @@ void init_recv(env_t *env);
 
 /** print.c **/
 void print_stats(env_t *env, unsigned int ret);
-void print_ttl(env_t *env, unsigned int ret, unsigned int seq);
 void print_errors(env_t *env);
 void print_stats_rtt(env_t *env);
 void print_final_stats(env_t *env);
