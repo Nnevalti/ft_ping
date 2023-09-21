@@ -8,9 +8,9 @@ void print_help()
 	printf("  -h: print this help message\n");
 }
 
-opt_t parse_opt(int ac, char **av)
+opt_t parse_opt(int ac, char **av, env_t *env)
 {
-	opt_t opt = {0, 0, 0, 0, NULL};
+	opt_t opt = {0, 0, 0, 0, 0, NULL};
 	int i = 1;
 
 	if (ac < 2)
@@ -34,6 +34,11 @@ opt_t parse_opt(int ac, char **av)
 		else if (ft_strcmp(av[i], "-a") == 0)
 		{
 			opt.audible = 1;
+		}
+		else if (ft_strcmp(av[i], "-t") == 0) {
+			opt.ttl = 1;
+			env->ttl = atoi(av[i + 1]);
+			i++;
 		}
 		else if (av[i][0] != '-')
 		{

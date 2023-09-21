@@ -31,7 +31,8 @@ void init_params(env_t *env, char *hostname)
 	env->hostname = hostname;
 	env->pid = getpid();
 
-	env->ttl = MAX_TTL;
+	if (!env->opt.ttl)
+		env->ttl = MAX_TTL;
 
 	env->pkt_sent = 0;
 	env->pkt_recv = 0;
@@ -81,6 +82,9 @@ void recv_ping(env_t *env)
 			else if (env->opt.verbose)
 			{
 				check_icmp_errors(icmp);
+			}
+			else {
+				printf("An error occured for icmp_seq %d\n", env->seq - 1);
 			}
 		}
 	}
@@ -146,7 +150,7 @@ int main(int ac, char **av)
 	env_t env;
 
 	check_root();
-	env.opt = parse_opt(ac, av);
+	env.opt = parse_opt(ac, av, &env);
 	handle_opt(env.opt);
 
 	signal(SIGINT, sig_handler);

@@ -29,6 +29,7 @@ typedef struct s_opt
 	unsigned int help : 1;
 	unsigned int err : 1;
 	unsigned int audible : 1;
+	unsigned int ttl : 1;
 	char *hostname;
 } opt_t;
 
@@ -79,7 +80,7 @@ void exit_clean(env_t *env, char *msg);
 /**
  * opt.c
  **/
-opt_t parse_opt(int ac, char **av);
+opt_t parse_opt(int ac, char **av, env_t *env);
 int handle_opt(opt_t opt);
 void dns_lookup(env_t *env);
 
