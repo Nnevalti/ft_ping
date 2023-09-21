@@ -84,7 +84,7 @@ void recv_ping(env_t *env)
 				check_icmp_errors(icmp);
 			}
 			else {
-				printf("An error occured for icmp_seq %d\n", env->seq - 1);
+				printf("An error occured for icmp_seq %d. Activate verbose mode to see the error\n", env->seq - 1);
 			}
 		}
 	}
