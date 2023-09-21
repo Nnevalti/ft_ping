@@ -28,6 +28,7 @@ typedef struct s_opt
 	unsigned int verbose : 1;
 	unsigned int help : 1;
 	unsigned int err : 1;
+	unsigned int audible : 1;
 	char *hostname;
 } opt_t;
 
@@ -75,24 +76,35 @@ static bool g_running[2];
 
 void exit_clean(env_t *env, char *msg);
 
-/** opt.c **/
+/**
+ * opt.c
+ **/
 opt_t parse_opt(int ac, char **av);
 int handle_opt(opt_t opt);
 void dns_lookup(env_t *env);
 
-/** init.c **/
+/**
+ * init.c
+ **/
 void set_socket(env_t *env);
 void init_send(env_t *env);
 void init_recv(env_t *env);
 
-/** print.c **/
+/** 
+ * print.c
+ **/
 void print_stats(env_t *env, unsigned int ret);
 void print_errors(env_t *env);
 void print_stats_rtt(env_t *env);
 void print_final_stats(env_t *env);
 
+/** 
+ * verbose.c
+ **/
+void check_icmp_errors(struct icmp *icmp);
+
 /**
- * Utils
+ * utils.c
  **/
 double ft_pow(int base, int exp);
 double ft_sqrt(double x);

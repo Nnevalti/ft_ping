@@ -9,6 +9,7 @@ SRCS 	:= 	main.c \
 			init.c \
 			print.c \
 			opt.c \
+			verbose.c \
 			utils.c
 
 DIR_SRCS 	= ./srcs

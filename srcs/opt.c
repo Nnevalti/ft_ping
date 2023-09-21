@@ -10,7 +10,7 @@ void print_help()
 
 opt_t parse_opt(int ac, char **av)
 {
-	opt_t opt = {0, 0, 0, NULL};
+	opt_t opt = {0, 0, 0, 0, NULL};
 	int i = 1;
 
 	if (ac < 2)
@@ -30,6 +30,10 @@ opt_t parse_opt(int ac, char **av)
 		{
 			opt.help = 1;
 			return opt;
+		}
+		else if (ft_strcmp(av[i], "-a") == 0)
+		{
+			opt.audible = 1;
 		}
 		else if (av[i][0] != '-')
 		{
