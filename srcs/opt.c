@@ -35,7 +35,7 @@ opt_t parse_opt(int ac, char **av, env_t *env)
 		{
 			opt.audible = 1;
 		}
-		else if (ft_strcmp(av[i], "-t") == 0) {
+		else if (ft_strcmp(av[i], "--ttl") == 0) {
 			opt.ttl = 1;
 			env->ttl = atoi(av[i + 1]);
 			i++;
