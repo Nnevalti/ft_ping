@@ -65,7 +65,11 @@ void recv_ping(env_t *env)
 	ret = recvmsg(env->sockfd, &env->response.ret_hdr, 0);
 	if (ret > 0)
 	{
-		if (ntohs(env->pkt.hdr.icmp_id) == env->pid && env->seq - 1 == ntohs(env->pkt.hdr.icmp_seq))
+#if defined(__APPLE__) || defined(__MACH__)
+		if (ntohs(env->pkt.hdr->icmp_id) == env->pid && env->seq - 1 == ntohs(env->pkt.hdr->icmp_seq))
+#elif defined(__linux__)
+		if (ntohs(env->pkt.hdr->un.echo.id) == env->pid && env->seq - 1 == ntohs(env->pkt.hdr->un.echo.sequence))
+#endif
 		{
 			struct ip *ip = (struct ip *)(env->response.iov->iov_base);
 			struct icmp *icmp = (struct icmp *)(env->response.iov->iov_base + (ip->ip_hl << 2));

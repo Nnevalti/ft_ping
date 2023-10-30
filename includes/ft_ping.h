@@ -31,7 +31,7 @@ typedef struct s_opt
 	unsigned int audible : 1;
 	unsigned int ttl : 1;
 	char *hostname;
-} opt_t;
+}  __attribute__ ((__packed__)) opt_t;
 
 typedef struct s_pkt
 {
@@ -40,7 +40,7 @@ typedef struct s_pkt
 	struct icmp hdr;
 	char hdr_buf[PKT_SIZE - sizeof(struct icmp)];
 #elif defined(__linux__)
-	struct icmphdr hdr;
+	struct icmphdr *hdr;
 	char hdr_buf[PKT_SIZE - sizeof(struct icmphdr)];
 #endif
 } t_pkt;

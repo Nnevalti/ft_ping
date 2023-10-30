@@ -165,10 +165,13 @@ void send_ping(int ping_sockfd, struct sockaddr_in *ping_addr,
 
 		// filling packet
 		bzero(&pckt, sizeof(pckt));
-
+#if defined(__APPLE__) || defined(__MACH__)
 		pckt.hdr.icmp_type = ICMP_ECHO;
 		pckt.hdr.icmp_id = getpid();
-
+#elif defined(__linux__)
+		pckt.hdr.type = ICMP_ECHO;
+		pckt.hdr.un.echo.id = getpid();
+#endif
 		for (i = 0; i < sizeof(pckt.msg) - 1; i++)
 			pckt.msg[i] = i + '0';
 
