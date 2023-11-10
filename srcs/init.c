@@ -27,17 +27,17 @@ void init_send(env_t *env)
 	}
 
 #if defined(__linux__)
-	env->pkt.hdr->type = ICMP_ECHO;
-	env->pkt.hdr->code = 0;
-	env->pkt.hdr->un.echo.sequence = htons(env->seq);
-	env->pkt.hdr->un.echo.id = htons(env->pid);
-	env->pkt.hdr->checksum = checksum((unsigned short*)env->pkt.hdr, sizeof(struct icmphdr));
+	env->pkt.hdr.type = ICMP_ECHO;
+	env->pkt.hdr.code = 0;
+	env->pkt.hdr.un.echo.sequence = htons(env->seq);
+	env->pkt.hdr.un.echo.id = htons(env->pid);
+	env->pkt.hdr.checksum = checksum((unsigned short*)&env->pkt.hdr, sizeof(struct icmphdr));
 #elif defined(__APPLE__) || defined(__MACH__)
-	env->pkt.hdr->icmp_type = ICMP_ECHO;
-	env->pkt.hdr->icmp_code = 0;
-	env->pkt.hdr->icmp_seq = htons(env->seq);
-	env->pkt.hdr->icmp_id = htons(env->pid);
-	env->pkt.hdr->icmp_cksum = checksum((unsigned short *)&env->pkt, sizeof(env->pkt));
+	env->pkt.hdr.icmp_type = ICMP_ECHO;
+	env->pkt.hdr.icmp_code = 0;
+	env->pkt.hdr.icmp_seq = htons(env->seq);
+	env->pkt.hdr.icmp_id = htons(env->pid);
+	env->pkt.hdr.icmp_cksum = checksum((unsigned short *)&env->pkt, sizeof(env->pkt));
 #endif
 	env->seq++;
 }

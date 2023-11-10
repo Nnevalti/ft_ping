@@ -35,12 +35,11 @@ typedef struct s_opt
 
 typedef struct s_pkt
 {
-// if macos
 #if defined(__APPLE__) || defined(__MACH__)
 	struct icmp hdr;
 	char hdr_buf[PKT_SIZE - sizeof(struct icmp)];
 #elif defined(__linux__)
-	struct icmphdr *hdr;
+	struct icmphdr hdr;
 	char hdr_buf[PKT_SIZE - sizeof(struct icmphdr)];
 #endif
 } t_pkt;
