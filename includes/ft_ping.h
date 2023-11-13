@@ -28,6 +28,9 @@ typedef struct s_opt
 	unsigned int verbose : 1;
 	unsigned int help : 1;
 	unsigned int err : 1;
+	unsigned int count : 1;
+	// unsigned int timeout : 1;
+	unsigned int interval : 1;
 	unsigned int audible : 1;
 	unsigned int ttl : 1;
 	char *hostname;
@@ -61,6 +64,9 @@ typedef struct s_env
 
 	int sockfd;
 	int ttl;
+	unsigned int count;
+	// float timeout;
+	float interval;
 	t_pkt pkt;
 	unsigned int pkt_sent, pkt_recv;
 	unsigned int seq;

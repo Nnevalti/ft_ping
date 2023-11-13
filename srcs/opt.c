@@ -6,11 +6,18 @@ void print_help()
 	printf("Options:\n");
 	printf("  -v: verbose mode\n");
 	printf("  -h: print this help message\n");
+	printf("  -a: audible mode\n");
+	printf("  -c <count>: stop after <count> replies\n");
+	printf("  -i <interval>: wait <interval> second between sending each packet (minimum: 200ms)\n");
+	// printf("  -t <timeout>: wait <timeout> second for a reply (default: 1s)\n");
+	printf("  --ttl <ttl>: set the ttl value\n");
 }
 
 opt_t parse_opt(int ac, char **av, env_t *env)
 {
-	opt_t opt = {0, 0, 0, 0, 0, NULL};
+	opt_t opt = {0, 0, 0, 0, 0, 0, 0, 
+	// 0, 
+	NULL};
 	int i = 1;
 
 	if (ac < 2)
@@ -35,6 +42,30 @@ opt_t parse_opt(int ac, char **av, env_t *env)
 		{
 			opt.audible = 1;
 		}
+		else if (ft_strcmp(av[i], "-c") == 0)
+		{
+			opt.count = 1;
+			env->count = atoi(av[i + 1]);
+			i++;
+		}
+		else if (ft_strcmp(av[i], "-i") == 0)
+		{
+			opt.interval = 1;
+			env->interval = atof(av[i + 1]);
+			if (env->interval < 0.2)
+			{
+				fprintf(stderr, "Error: interval must be at least 200ms\n");
+				opt.err = 1;
+				return opt;
+			}
+			i++;
+		}
+		// else if (ft_strcmp(av[i], "-t") == 0)
+		// {
+		// 	opt.timeout = 1;
+		// 	env->timeout = atoi(av[i + 1]);
+		// 	i++;
+		// }
 		else if (ft_strcmp(av[i], "--ttl") == 0) {
 			opt.ttl = 1;
 			env->ttl = atoi(av[i + 1]);

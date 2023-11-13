@@ -174,6 +174,11 @@ void ping_loop(env_t *env)
 
 	while (g_running[0])
 	{
+		if (env->opt.count && env->pkt_sent == env->count) {
+			g_running[0] = false;
+			break;
+		}
+
 		send_ping(env);
 		recv_ping(env);
 		calculate_stats(env);
@@ -182,12 +187,17 @@ void ping_loop(env_t *env)
 			g_running[1] = false;
 			print_stats_rtt(env);
 		}
-		usleep(PING_SLEEP_RATE * 1000000);
+
+		if (env->opt.interval)
+			usleep(env->interval * 1000000);
+		else
+			usleep(PING_SLEEP_RATE * 1000000);
 	}
 	if (gettimeofday(&env->end, NULL) == -1)
 		exit_clean(env, "gettimeofday failed");
 
-	print_final_stats(env);
+	if (env->pkt_recv > 0)
+		print_final_stats(env);
 }
 
 int main(int ac, char **av)
