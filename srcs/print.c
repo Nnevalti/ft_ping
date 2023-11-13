@@ -14,7 +14,7 @@ void print_stats(env_t *env, unsigned int ret)
 
 	if (env->seq == 1)
 	{
-		env->rtt = (double *)malloc(sizeof(double) + 1);
+		env->rtt = (double *)malloc(sizeof(double) * 2);
 		env->rtt[0] = time_elapsed;
 		env->rtt[1] = -1;
 	}

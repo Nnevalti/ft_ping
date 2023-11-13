@@ -205,6 +205,7 @@ int main(int ac, char **av)
 	dns_lookup(&env);
 
 	ping_loop(&env);
+	free(env.rtt);
 	freeaddrinfo(env.res);
 	close(env.sockfd);
 	return 0;
