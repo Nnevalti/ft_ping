@@ -1,3 +1,10 @@
+
+# Colors
+_RED	=	\e[31m
+_GREEN	=	\e[32m
+_YELLOW	=	\e[33m
+_NC		=	\e[0m
+
 NAME    = ft_ping
 RM      = rm      -rf
 CC      = clang
@@ -26,18 +33,19 @@ all: $(NAME)
 
 $(DIR_OBJ)/%.o:	$(DIR_SRCS)/%.c
 	@mkdir -p $(dir $@)
+	@printf "$(_YELLOW)Compiling $< $(_NC)\n"
 	@$(CC) $(FLAGS) $(DIR_INC) -o $@ -c $< -MMD
 
 $(NAME): $(OBJS)
-	@$(CC) $(FLAGS) $(DIR_INC) $(OBJS) -o $(NAME) -lm
 	@printf "$(_GREEN)Generating $(NAME) $(_NC)\n"
+	@$(CC) $(FLAGS) $(DIR_INC) $(OBJS) -o $(NAME) -lm
 
 clean:
 	@$(RM) $(DIR_OBJ)
-	@printf "$(_GREEN)Deletes objects files $(NAME) $(_NC)\n"
+	@printf "$(_RED)Deleting objects files $(NAME) $(_NC)\n"
 
 fclean:		clean
+	@printf "$(_RED)Deleting $(NAME) $(_NC)\n"
 	@$(RM) $(NAME)
-	@printf "$(_GREEN)Delete $(NAME) $(_NC)\n"
 
 re:	fclean all
