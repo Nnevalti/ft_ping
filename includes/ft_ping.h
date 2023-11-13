@@ -101,7 +101,11 @@ void print_final_stats(env_t *env);
 /** 
  * verbose.c
  **/
+#if defined(__APPLE__) || defined(__MACH__)
 void check_icmp_errors(struct icmp *icmp);
+#elif defined(__linux__)
+void check_icmp_errors(struct icmphdr *icmp);
+#endif
 
 /**
  * utils.c

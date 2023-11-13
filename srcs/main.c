@@ -57,6 +57,7 @@ void send_ping(env_t *env)
 	env->pkt_sent++;
 }
 
+#if defined(__APPLE__) || defined(__MACH__)
 void recv_ping(env_t *env)
 {
 	int ret;
@@ -65,11 +66,7 @@ void recv_ping(env_t *env)
 	ret = recvmsg(env->sockfd, &env->response.ret_hdr, 0);
 	if (ret > 0)
 	{
-#if defined(__APPLE__) || defined(__MACH__)
 		if (ntohs(env->pkt.hdr.icmp_id) == env->pid && env->seq - 1 == ntohs(env->pkt.hdr.icmp_seq))
-#elif defined(__linux__)
-		if (ntohs(env->pkt.hdr.un.echo.id) == env->pid && env->seq - 1 == ntohs(env->pkt.hdr.un.echo.sequence))
-#endif
 		{
 			struct ip *ip = (struct ip *)(env->response.iov->iov_base);
 			struct icmp *icmp = (struct icmp *)(env->response.iov->iov_base + (ip->ip_hl << 2));
@@ -103,6 +100,50 @@ void recv_ping(env_t *env)
 		}
 	}
 }
+#elif defined(__linux__)
+void recv_ping(env_t *env)
+{
+	int ret;
+
+	init_recv(env);
+	ret = recvmsg(env->sockfd, &env->response.ret_hdr, 0);
+	if (ret > 0)
+	{
+		if (ntohs(env->pkt.hdr.un.echo.id) == env->pid && env->seq - 1 == ntohs(env->pkt.hdr.un.echo.sequence))
+		{
+			struct iphdr *ip = (struct iphdr *)(env->response.iov->iov_base);
+			struct icmphdr *icmp = (struct icmphdr *)(env->response.iov->iov_base + (ip->ihl << 2));
+			if (gettimeofday(&env->receive, NULL) == -1)
+				exit_clean(env, "gettimeofday failed");
+
+			if (icmp->type == ICMP_ECHOREPLY)
+			{
+				env->pkt_recv++;
+				print_stats(env, ret);
+				if (env->opt.audible)
+					printf("\a");
+			}
+			else if (env->opt.verbose)
+			{
+				check_icmp_errors(icmp);
+			}
+			else {
+				printf("An error occured for icmp_seq %d. Activate verbose mode to see the error\n", env->seq - 1);
+			}
+		}
+	}
+	else
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			printf("Recvmsg timeout for icmp_seq %d\n", env->seq - 1);
+		else
+		{
+			printf("recvmsg failed: %s\n", strerror(errno));
+			exit_clean(env, "recvmsg failed");
+		}
+	}
+}
+#endif
 
 void calculate_stats(env_t *env)
 {
