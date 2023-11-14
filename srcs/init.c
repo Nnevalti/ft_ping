@@ -5,8 +5,14 @@ void set_socket(env_t *env)
 	int sock_fd;
 	struct timeval timeout;
 
-	timeout.tv_sec = RECV_TIMEOUT;
-	timeout.tv_usec = 0;
+	if (env->opt.timeout) {
+		timeout.tv_sec = (int)env->timeout;
+		timeout.tv_usec = ((env->timeout - timeout.tv_sec) * 1000000);
+	}
+	else {
+		timeout.tv_sec = RECV_TIMEOUT;
+		timeout.tv_usec = 0;
+	}
 
 	sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (sock_fd < 0)

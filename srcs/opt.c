@@ -2,22 +2,21 @@
 
 void print_help()
 {
-	printf("Usage: ping [-vh] <hostname>\n");
+	printf("Usage: ping [options] <destination>\n");
 	printf("Options:\n");
+	printf("  <destination>: destination can be a hostname or an IP address\n");
 	printf("  -v: verbose mode\n");
 	printf("  -h: print this help message\n");
 	printf("  -a: audible mode\n");
 	printf("  -c <count>: stop after <count> replies\n");
 	printf("  -i <interval>: wait <interval> second between sending each packet (minimum: 200ms)\n");
-	// printf("  -t <timeout>: wait <timeout> second for a reply (default: 1s)\n");
-	printf("  --ttl <ttl>: set the ttl value\n");
+	printf("  -W <timeout>: wait <timeout> second for a reply (default: 1s)\n");
+	printf("  -t <ttl>: set the ttl value\n");
 }
 
 opt_t parse_opt(int ac, char **av, env_t *env)
 {
-	opt_t opt = {0, 0, 0, 0, 0, 0, 0, 
-	// 0, 
-	NULL};
+	opt_t opt = {0, 0, 0, 0, 0, 0, 0, 0, NULL};
 	int i = 1;
 
 	if (ac < 2)
@@ -60,13 +59,13 @@ opt_t parse_opt(int ac, char **av, env_t *env)
 			}
 			i++;
 		}
-		// else if (ft_strcmp(av[i], "-t") == 0)
-		// {
-		// 	opt.timeout = 1;
-		// 	env->timeout = atoi(av[i + 1]);
-		// 	i++;
-		// }
-		else if (ft_strcmp(av[i], "--ttl") == 0) {
+		else if (ft_strcmp(av[i], "-W") == 0)
+		{
+			opt.timeout = 1;
+			env->timeout = atof(av[i + 1]);
+			i++;
+		}
+		else if (ft_strcmp(av[i], "-t") == 0) {
 			opt.ttl = 1;
 			env->ttl = atoi(av[i + 1]);
 			i++;
