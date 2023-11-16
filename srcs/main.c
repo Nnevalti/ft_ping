@@ -89,7 +89,7 @@ void recv_ping(env_t *env)
 			}
 		}
 	}
-	else
+	else if (env->opt.verbose)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			printf("Recvmsg timeout for icmp_seq %d\n", env->seq - 1);
@@ -132,7 +132,7 @@ void recv_ping(env_t *env)
 			}
 		}
 	}
-	else
+	else if (env->opt.verbose)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			printf("Recvmsg timeout for icmp_seq %d\n", env->seq - 1);
@@ -196,7 +196,7 @@ void ping_loop(env_t *env)
 	if (gettimeofday(&env->end, NULL) == -1)
 		exit_clean(env, "gettimeofday failed");
 
-	if (env->pkt_recv > 0)
+	if (env->seq > 0)
 		print_final_stats(env);
 }
 
